@@ -107,9 +107,11 @@ class Board:
     def select_column(self, column):
         cord = self._get_grid_cordinates()[0]
         pyautogui.click(
-            self._get_grid_cordinates()[column][1] + LEFT,
-            self._get_grid_cordinates()[column][0] + TOP,
+            cord[1] * column * 2 + LEFT + cord[1],
+            cord[0] + TOP,
         )
+        print("SElected Column", column, "------------------------------")
+
     
     def is_full(self, grid):
         for i in range(0, len(grid)):
@@ -123,24 +125,47 @@ class Board:
 
     def get_heuristic(self, grid, player):
         score = 0
+        print(player, "Turn")
+        flag, color = self.is_winning_state(grid, player)
+        if flag and color == RED:
+            return 999
+        elif flag and color != RED:
+            return -999
+
+        redscore = 0
+        bluescore = 0
         for col in range(7):
             if not self.is_valid_column(grid, col):
                 continue
-            row = 5
-            while (row > 0):
-                if (self.get_token(grid, row - 1, col) != EMPTY):
-                    break
-                row -= 1
+            row = self.get_next_row(grid, col)
+            print(row, col)
 
-            score += self.get_score(grid, player, row, col)
-            score -= self.get_score(grid, RED if player == BLUE else BLUE, row, col)
-        return score
+            score1 = self.get_score(grid, RED, row, col)
+            if score1 > redscore:
+                redscore = score1
+
+            score2 = self.get_score(grid, BLUE, row, col)
+
+            if score2 > bluescore:
+                bluescore = score2
+                print(col, "Column \n -------\n")
+
+        if player == RED:
+            redscore += 1
+        else:
+            bluescore += 1
+        print(redscore, "  ", bluescore)
+        return redscore - bluescore
 
     def get_score(self, grid, player, row, col):
-        score = 0
-        for direction in [(0, 1), (1, 0), (1, 1), (1, -1)]: 
-            score += self.get_direction_score(grid, player, row, col, direction)
-        return score
+        score = -100000
+        max = score
+        for direction in [(0, 1), (1, 1), (1, -1), (0, -1), (-1, 0), (-1, -1), (-1, 1)]:
+            score = self.get_direction_score(grid, player, row, col, direction)
+            if (max < score):
+                max = score
+            print("Tile", direction, "score", max)
+        return max
 
     def get_direction_score(self, grid, player, row, col, direction):
         dr, dc = direction
@@ -150,24 +175,52 @@ class Board:
         else:
             enemy = RED
 
-        for i in range(1, 3):
+        count = 0
+        for i in range(1, 4):
             r = row + i * dr
             c = col + i * dc
 
             if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) == enemy:
-                return 0
+                score = 0
+                break
+
+            if i == 1 and self.get_token(grid, r, c) == EMPTY:
+                score = 0
                 break
 
             if self.get_token(grid, r, c) == EMPTY:
                 break
-
+            count = i
             score += 2 * i
 
-        r = row + (i - 1) * dr
-        c = col + (i - 1) * dc
+        r = row - dr
+        c = col - dc
         if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) != player:
             return score
+        if count == 2 and self.get_token(grid, r, c) == player:
+            score += 11
+
+        elif count == 1 and self.get_token(grid, r, c) == player:
+            score += 2
+
         return score
+
+        """    if self.get_token(grid, r, c) == EMPTY and self.get_token(grid, row + (i - 1) * dr,col + (i - 1) * dc) == EMPTY:
+                break
+            if self.get_token(grid, r, c) == EMPTY:
+
+                if r - 1 >= 0 and self.get_token(grid, r - 1, c) != EMPTY:
+                    if i == 3:
+                        score += 1
+                    else:
+                        rn = row + (i + 1) * dr
+                        cn = col + (i + 1) * dc
+
+                        if rn >= 0 and cn >= 0 and rn < 6 and cn < 7 and (
+                                self.get_token(grid, rn, cn) == player or self.get_token(grid, rn, cn) == EMPTY):
+                            score += 1
+                        else:
+                            score =0"""
     
     def is_valid_column(self, grid, column):
         if grid[0][column] == EMPTY:
@@ -195,8 +248,8 @@ class Board:
                     result = self.check_connect_4(grid, RED if player == BLUE else BLUE, row, col)
                 
                 if result == True:
-                    return True
-        return False
+                    return True, self.get_token(grid, row, col)
+        return False ,self.get_token(grid, row, col)
 
     def check_connect_4(self, grid, player, row, col):
         for direction in [(0, 1), (1, 0), (1, 1), (1, -1)]: 
@@ -216,16 +269,19 @@ class Board:
         return True
 
     def minimax(self, grid, depth, player):
-        if depth == 0 or self.is_winning_state(grid,player) or self.is_full(grid):
-            return None, self.get_heuristic(grid,player)
+        flag, color = self.is_winning_state(grid, player)
+        if depth == 0 or self.is_full(grid) or flag:
+            return None, self.get_heuristic(grid, player)
 
         best_column = None
-        best_value = -1000 if player == RED else 1000
-        for column in range(0,6):
-            if self.is_valid_column(grid,column):
-                row = self.get_next_row(grid,column)
+        best_value = -10000 if player == RED else 10000
+        for column in range(0, 7):
+            if self.is_valid_column(grid, column):
+                row = self.get_next_row(grid, column)
                 self.insert_token(grid, column, row, player)
                 _, value = self.minimax(grid, depth - 1, BLUE if player == RED else RED)
+                self.print_grid(grid)
+                print("score ", value)
                 self.remove_token(grid, column, row)
                 if player == RED and value > best_value:
                     best_column = column
@@ -233,5 +289,5 @@ class Board:
                 elif player == BLUE and value < best_value:
                     best_column = column
                     best_value = value
-
+        print("------------------------")
         return best_column, best_value
