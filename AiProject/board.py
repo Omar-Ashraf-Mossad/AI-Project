@@ -125,8 +125,9 @@ class Board:
 
     def get_heuristic(self, grid, player):
         score = 0
-        print(player, "Turn")
+        # print(player,"Turn")
         flag, color = self.is_winning_state(grid, player)
+
         if flag and color == RED:
             return 999
         elif flag and color != RED:
@@ -134,6 +135,7 @@ class Board:
 
         redscore = 0
         bluescore = 0
+
         for col in range(7):
             if not self.is_valid_column(grid, col):
                 continue
@@ -150,25 +152,29 @@ class Board:
                 bluescore = score2
                 print(col, "Column \n -------\n")
 
-        if player == RED:
-            redscore += 1
-        else:
-            bluescore += 1
         print(redscore, "  ", bluescore)
+        if redscore - bluescore==0:
+            if player==RED:
+                return -1
+            else:
+                return 1
         return redscore - bluescore
 
     def get_score(self, grid, player, row, col):
         score = -100000
         max = score
-        for direction in [(0, 1), (1, 1), (1, -1), (0, -1), (-1, 0), (-1, -1), (-1, 1)]:
+
+        for direction in [(0, 1), (1, 0), (1, 1), (1, -1), (0, -1), (-1, 0), (-1, -1), (-1, 1)]:
             score = self.get_direction_score(grid, player, row, col, direction)
-            if (max < score):
+            if (score > max):
                 max = score
-            print("Tile", direction, "score", max)
+           # print("Tile", row, " ", col, " ", "Direction ", direction, "score", score)
+
         return max
 
     def get_direction_score(self, grid, player, row, col, direction):
         dr, dc = direction
+
         score = 0
         if player == RED:
             enemy = BLUE
@@ -176,36 +182,48 @@ class Board:
             enemy = RED
 
         count = 0
+        # Count The number of Connected Tokens
         for i in range(1, 4):
             r = row + i * dr
             c = col + i * dc
 
-            if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) == enemy:
-                score = 0
-                break
-
-            if i == 1 and self.get_token(grid, r, c) == EMPTY:
-                score = 0
-                break
-
-            if self.get_token(grid, r, c) == EMPTY:
+           # print("HERE", r, c)
+            if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) == enemy or self.get_token(grid, r,
+                                                                                                           c) == EMPTY:
                 break
             count = i
-            score += 2 * i
+
+        if (count == 3):
+            score = 100
+            return score
+
+        elif count == 2:
+            score = 20
+
+        elif count == 1:
+            score = 2
 
         r = row - dr
         c = col - dc
+
         if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) != player:
             return score
+        score2 = 0
+        # May be 2 in direction andone in the opposite
         if count == 2 and self.get_token(grid, r, c) == player:
-            score += 11
+            score2 = 100
+        # May be 2 in direction and one in the opposite
 
-        elif count == 1 and self.get_token(grid, r, c) == player:
-            score += 2
+        rn = row - 2*dr
+        cn = col - 2*dc
+        if rn < 0 or cn < 0 or rn >= 6 or cn >= 7 or self.get_token(grid, r, c) != player:
+            return score
+        if count == 1 and self.get_token(grid, r, c) == player:
+            score2 = 20
 
-        return score
+        return max(score, score2)
 
-        """    if self.get_token(grid, r, c) == EMPTY and self.get_token(grid, row + (i - 1) * dr,col + (i - 1) * dc) == EMPTY:
+    """    if self.get_token(grid, r, c) == EMPTY and self.get_token(grid, row + (i - 1) * dr,col + (i - 1) * dc) == EMPTY:
                 break
             if self.get_token(grid, r, c) == EMPTY:
 
@@ -252,8 +270,8 @@ class Board:
         return False ,self.get_token(grid, row, col)
 
     def check_connect_4(self, grid, player, row, col):
-        for direction in [(0, 1), (1, 0), (1, 1), (1, -1)]: 
-            if self.check_direction(grid, player, row, col, direction)==True:
+        for direction in [(0, 1), (1, 0), (1, 1), (1, -1),(0,-1),(-1,0),(-1,-1),(-1,1)]:
+            if self.check_direction(grid, player, row, col, direction) == True:
                 return True
         return False
 
