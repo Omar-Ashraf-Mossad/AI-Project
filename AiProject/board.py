@@ -1,6 +1,22 @@
 from PIL import ImageGrab
 import pyautogui
 
+
+""" Omar's Coordination
+LEFT = 433
+TOP = 190
+RIGHT = 934
+BOTTOM = 615
+
+startCord = (35.42,35.786)
+        cordArr = []
+        for i in range(0, 7):
+            for j in range(0, 6):
+                x = startCord[0] + i * 70.83
+                y = startCord[1] + j * 71.57
+                cordArr.append((x, y))
+"""
+
 # YOU MAY NEED TO CHANGE THESE VALUES BASED ON YOUR SCREEN SIZE
 LEFT = 600
 TOP = 255
