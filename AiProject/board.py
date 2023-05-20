@@ -132,23 +132,22 @@ class Board:
         score = 0
         # print(player,"Turn")
 
-
         for col in range(7):
             if not self.is_valid_column(grid, col):
                 continue
             for row in range(6):
-                if self.get_token(grid, row, col) != EMPTY:
+                if self.get_token(grid,row,col) != EMPTY:
                     break
 
-                score += self.get_score(grid, RED, row, col, player)
-                score -= self.get_score(grid, BLUE, row, col, player)
+                score += self.get_score(grid, RED, row, col,player)
+                score -= self.get_score(grid, BLUE, row, col,player)
 
         flag, color = self.is_winning_state(grid, player)
 
         if flag and color == RED:
-            return score + 9999
+            return score+9999
         elif flag and color != RED:
-            return score - 9999
+            return score-9999
 
         return score
 
@@ -163,7 +162,7 @@ class Board:
                 score1 -= 2
             score += score1
 
-        return max
+        return score
 
     def get_direction_score(self, grid, player, row, col, direction,turn):
         dr, dc = direction
@@ -187,9 +186,10 @@ class Board:
 
 # Give scores to chains
         if (count == 3):
-            score = 100
-            return score
-
+            if player == turn:
+                score = 100
+            else:
+                score = 80
         elif count == 2:
             score = 20
 
@@ -225,7 +225,7 @@ class Board:
             if (player == turn):
                 score2 = 100
             else:
-                score2 = 60
+                score2 = 80
             return max(score, score2)
             # there is two tokens the same color in the opposite direction
         if not (rn < 0 or cn < 0 or rn >= 6 or cn >= 7 or self.get_token(grid, rn, cn) != player):
@@ -286,19 +286,20 @@ class Board:
         return True
 
     def minimax(self, grid, depth, player):
-        flag, color = self.is_winning_state(grid, player)
+
+        flag,color = self.is_winning_state(grid,player)
         if depth == 0 or self.is_full(grid) or flag:
-            return None, self.get_heuristic(grid, player)
+            return None, self.get_heuristic(grid,player)
 
         best_column = None
-        best_value = -10000 if player == RED else 10000
-        for column in range(0, 7):
-            if self.is_valid_column(grid, column):
-                row = self.get_next_row(grid, column)
+        best_value = -1000000 if player == RED else 1000000
+        for column in range(0,7):
+            if self.is_valid_column(grid,column):
+                row = self.get_next_row(grid,column)
                 self.insert_token(grid, column, row, player)
                 _, value = self.minimax(grid, depth - 1, BLUE if player == RED else RED)
                 self.print_grid(grid)
-                print("score ", value)
+                print("score ",value)
                 self.remove_token(grid, column, row)
                 if player == RED and value > best_value:
                     best_column = column
@@ -307,55 +308,52 @@ class Board:
                     best_column = column
                     best_value = value
         print("------------------------")
-        return best_column, best_value
+        return  best_column,best_value
     
-    def AlphaBetaPruning(self, grid, depth, player, alpha, beta):
-     flag, color = self.is_winning_state(grid, player)
-     # Cutooftest
-     if depth == 0 or self.is_full(grid) or flag:
-        return None, self.get_heuristic(grid, player)
+    def AlphaBetaPruning(self, grid, depth, player,alpha,beta):
+        flag,color = self.is_winning_state(grid,player)
+        #Cutooftest
+        if depth == 0 or self.is_full(grid) or flag:
+            return None, self.get_heuristic(grid,player)
 
-     minV = 10000
-     maxV = -10000
+        minV=1000000
+        maxV = -1000000
 
-     best_column = None
-     for column in range(0, 7):
-        # Generate Child State
-        if self.is_valid_column(grid, column):
-            row = self.get_next_row(grid, column)
-            self.insert_token(grid, column, row, player)
-            _, value = self.AlphaBetaPruning(grid, depth - 1, BLUE if player == RED else RED, alpha, beta)
-            self.print_grid(grid)
-            print("score ", value)
-            self.remove_token(grid, column, row)
+        best_column = None
+        for column in range(0,7):
+            #Generate Child State
+            if self.is_valid_column(grid,column):
+                row = self.get_next_row(grid,column)
+                self.insert_token(grid, column, row, player)
+                _, value = self.AlphaBetaPruning(grid, depth - 1, BLUE if player == RED else RED,alpha,beta)
+                self.print_grid(grid)
+                print("score ",value)
+                self.remove_token(grid, column, row)
 
-            # Max Operation
-            if player == RED:
-                if value > maxV:
-                    best_column = column
-                    maxV = value
+                #Max Operation
+                if player == RED:
+                    if value>maxV:
+                        best_column = column
+                        maxV = value
 
-                if maxV >= beta:
-                    return best_column, maxV
+                    if maxV>= beta:
+                        return best_column,maxV
 
-                alpha = max(maxV, alpha)
+                    alpha = max(maxV,alpha)
 
-            # MinOperation
-            elif player == BLUE:
-                if value < minV:
-                    best_column = column
-                    minV = value
+                #MinOperation
+                elif player == BLUE:
+                    if value<minV:
+                        best_column = column
+                        minV = value
 
-                if minV <= alpha:
-                    return best_column, minV
-                beta = min(minV, value)
-     print("------------------------")
-     if player == RED:
-      return best_column, maxV
-     else:
-        return best_column, minV
-
-
-
+                    if minV<= alpha:
+                        return best_column,minV
+                    beta = min(minV,value)
+        print("------------------------")
+        if player == RED:
+            return best_column, maxV
+        else:
+            return best_column, minV
     
     
