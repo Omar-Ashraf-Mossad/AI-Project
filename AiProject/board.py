@@ -309,3 +309,54 @@ class Board:
                     best_value = value
         print("------------------------")
         return best_column, best_value
+    
+    def AlphaBetaPruning(self, grid, depth, player, alpha, beta):
+     flag, color = self.is_winning_state(grid, player)
+     # Cutooftest
+     if depth == 0 or self.is_full(grid) or flag:
+        return None, self.get_heuristic(grid, player)
+
+     minV = 10000
+     maxV = -10000
+
+     best_column = None
+     for column in range(0, 7):
+        # Generate Child State
+        if self.is_valid_column(grid, column):
+            row = self.get_next_row(grid, column)
+            self.insert_token(grid, column, row, player)
+            _, value = self.AlphaBetaPruning(grid, depth - 1, BLUE if player == RED else RED, alpha, beta)
+            self.print_grid(grid)
+            print("score ", value)
+            self.remove_token(grid, column, row)
+
+            # Max Operation
+            if player == RED:
+                if value > maxV:
+                    best_column = column
+                    maxV = value
+
+                if maxV >= beta:
+                    return best_column, maxV
+
+                alpha = max(maxV, alpha)
+
+            # MinOperation
+            elif player == BLUE:
+                if value < minV:
+                    best_column = column
+                    minV = value
+
+                if minV <= alpha:
+                    return best_column, minV
+                beta = min(minV, value)
+     print("------------------------")
+     if player == RED:
+      return best_column, maxV
+     else:
+        return best_column, minV
+
+
+
+    
+    
