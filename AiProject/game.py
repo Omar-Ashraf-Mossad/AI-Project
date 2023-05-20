@@ -25,7 +25,7 @@ def main():
         if game_end:
             break
         # YOUR CODE GOES HERE
-        column,_ = board.AlphaBetaPruning(game_board,1,RED,-10000)
+        column,_ = board.AlphaBetaPruning(game_board,1,RED,-10000,10000)
         #print(column)
         # Insert here the action you want to perform based on the output of the algorithm
         # You can use the following function to select a column

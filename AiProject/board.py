@@ -18,10 +18,15 @@ startCord = (35.42,35.786)
 """
 
 # YOU MAY NEED TO CHANGE THESE VALUES BASED ON YOUR SCREEN SIZE
-LEFT = 600
-TOP = 255
-RIGHT = 1323
-BOTTOM = 875
+LEFT = 433
+TOP = 190
+RIGHT = 934
+BOTTOM = 615
+
+
+EMPTY = 0
+RED = 1
+BLUE = 2
 
 EMPTY = 0
 RED = 1
@@ -126,53 +131,41 @@ class Board:
     def get_heuristic(self, grid, player):
         score = 0
         # print(player,"Turn")
-        flag, color = self.is_winning_state(grid, player)
 
-        if flag and color == RED:
-            return 999
-        elif flag and color != RED:
-            return -999
-
-        redscore = 0
-        bluescore = 0
 
         for col in range(7):
             if not self.is_valid_column(grid, col):
                 continue
-            row = self.get_next_row(grid, col)
-            print(row, col)
+            for row in range(6):
+                if self.get_token(grid, row, col) != EMPTY:
+                    break
 
-            score1 = self.get_score(grid, RED, row, col)
-            if score1 > redscore:
-                redscore = score1
+                score += self.get_score(grid, RED, row, col, player)
+                score -= self.get_score(grid, BLUE, row, col, player)
 
-            score2 = self.get_score(grid, BLUE, row, col)
+        flag, color = self.is_winning_state(grid, player)
 
-            if score2 > bluescore:
-                bluescore = score2
-                print(col, "Column \n -------\n")
+        if flag and color == RED:
+            return score + 9999
+        elif flag and color != RED:
+            return score - 9999
 
-        print(redscore, "  ", bluescore)
-        if redscore - bluescore==0:
-            if player==RED:
-                return -1
-            else:
-                return 1
-        return redscore - bluescore
+        return score
 
-    def get_score(self, grid, player, row, col):
+    def get_score(self, grid, player, row, col,turn):
         score = -100000
         max = score
 
         for direction in [(0, 1), (1, 0), (1, 1), (1, -1), (0, -1), (-1, 0), (-1, -1), (-1, 1)]:
-            score = self.get_direction_score(grid, player, row, col, direction)
-            if (score > max):
-                max = score
-           # print("Tile", row, " ", col, " ", "Direction ", direction, "score", score)
+            score1 = self.get_direction_score(grid, player, row, col, direction, turn)
+
+            if row + 1 <= 5 and self.get_token(grid, row + 1, col) == EMPTY and score1 != 0:
+                score1 -= 2
+            score += score1
 
         return max
 
-    def get_direction_score(self, grid, player, row, col, direction):
+    def get_direction_score(self, grid, player, row, col, direction,turn):
         dr, dc = direction
 
         score = 0
@@ -188,11 +181,11 @@ class Board:
             c = col + i * dc
 
            # print("HERE", r, c)
-            if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) == enemy or self.get_token(grid, r,
-                                                                                                           c) == EMPTY:
+            if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) == enemy or self.get_token(grid, r,c) == EMPTY:
                 break
             count = i
 
+# Give scores to chains
         if (count == 3):
             score = 100
             return score
@@ -203,42 +196,48 @@ class Board:
         elif count == 1:
             score = 2
 
+#########################
+        # token in opposite direction
         r = row - dr
         c = col - dc
 
+# Case There is an empty space and in that direction there is only 1 or 2 tokens and in the opposite no place to put a token or it is an enemy token means that there can't be a 4 token chain here
         if r < 0 or c < 0 or r >= 6 or c >= 7 or self.get_token(grid, r, c) != player:
+            if count != 3:
+                rstop = row + (count + 1) * dr
+                cstop = col + (count + 1) * dc
+                if rstop < 0 or cstop < 0 or rstop >= 6 or cstop >= 7 or self.get_token(grid, rstop, cstop) != EMPTY:
+                    return 0
             return score
-        score2 = 0
-        # May be 2 in direction andone in the opposite
-        if count == 2 and self.get_token(grid, r, c) == player:
-            score2 = 100
-        # May be 2 in direction and one in the opposite
+# No Player tokens in this direction so dont care about previous token it will be calculated in the loop
+        if count == 0:
+            return 0
 
-        rn = row - 2*dr
-        cn = col - 2*dc
-        if rn < 0 or cn < 0 or rn >= 6 or cn >= 7 or self.get_token(grid, r, c) != player:
-            return score
-        if count == 1 and self.get_token(grid, r, c) == player:
-            score2 = 20
+        score2 = 0
+# the second token in the opposite direction
+        rn = row - 2 * dr
+        cn = col - 2 * dc
+
+        count2 = 0
+
+ # May be 2 in direction and one in the opposite
+        if count == 2 and self.get_token(grid, r, c) == player:
+            if (player == turn):
+                score2 = 100
+            else:
+                score2 = 60
+            return max(score, score2)
+            # there is two tokens the same color in the opposite direction
+        if not (rn < 0 or cn < 0 or rn >= 6 or cn >= 7 or self.get_token(grid, rn, cn) != player):
+            count2 = 2
+
+        if count2 == 2 and count == 1:
+            score2 = 0
+        else:
+            score2 = 10
+            # May be 2 in direction and one in the opposite
 
         return max(score, score2)
-
-    """    if self.get_token(grid, r, c) == EMPTY and self.get_token(grid, row + (i - 1) * dr,col + (i - 1) * dc) == EMPTY:
-                break
-            if self.get_token(grid, r, c) == EMPTY:
-
-                if r - 1 >= 0 and self.get_token(grid, r - 1, c) != EMPTY:
-                    if i == 3:
-                        score += 1
-                    else:
-                        rn = row + (i + 1) * dr
-                        cn = col + (i + 1) * dc
-
-                        if rn >= 0 and cn >= 0 and rn < 6 and cn < 7 and (
-                                self.get_token(grid, rn, cn) == player or self.get_token(grid, rn, cn) == EMPTY):
-                            score += 1
-                        else:
-                            score =0"""
     
     def is_valid_column(self, grid, column):
         if grid[0][column] == EMPTY:
