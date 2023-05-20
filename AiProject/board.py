@@ -28,10 +28,6 @@ EMPTY = 0
 RED = 1
 BLUE = 2
 
-EMPTY = 0
-RED = 1
-BLUE = 2
-
 
 class Board:
     def __init__(self) -> None:
@@ -152,8 +148,7 @@ class Board:
         return score
 
     def get_score(self, grid, player, row, col,turn):
-        score = -100000
-        max = score
+        score = 0
 
         for direction in [(0, 1), (1, 0), (1, 1), (1, -1), (0, -1), (-1, 0), (-1, -1), (-1, 1)]:
             score1 = self.get_direction_score(grid, player, row, col, direction, turn)
@@ -189,7 +184,7 @@ class Board:
             if player == turn:
                 score = 100
             else:
-                score = 80
+                score = 55
         elif count == 2:
             score = 20
 
@@ -225,7 +220,7 @@ class Board:
             if (player == turn):
                 score2 = 100
             else:
-                score2 = 80
+                score2 = 55
             return max(score, score2)
             # there is two tokens the same color in the opposite direction
         if not (rn < 0 or cn < 0 or rn >= 6 or cn >= 7 or self.get_token(grid, rn, cn) != player):
@@ -269,7 +264,7 @@ class Board:
         return False ,self.get_token(grid, row, col)
 
     def check_connect_4(self, grid, player, row, col):
-        for direction in [(0, 1), (1, 0), (1, 1), (1, -1),(0,-1),(-1,0),(-1,-1),(-1,1)]:
+        for direction in [(0, 1), (1, 0), (1, 1), (1, -1)]:
             if self.check_direction(grid, player, row, col, direction) == True:
                 return True
         return False
